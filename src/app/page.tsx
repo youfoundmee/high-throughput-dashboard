@@ -1,9 +1,31 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Activity, Cpu, Database, Server } from 'lucide-react';
 import TelemetryFeed from '@/components/TelemetryFeed';
 
 export default function DashboardPage() {
+  const [metrics, setMetrics] = useState({
+    throughput: 124800,
+    latency: 1.42,
+    activeStreams: 1024,
+    health: 99.98,
+  });
+
+  // Jitter simulation to match streaming updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMetrics({
+        throughput: Math.floor(124000 + Math.random() * 1600),
+        latency: Number((1.35 + Math.random() * 0.25).toFixed(2)),
+        activeStreams: Math.floor(1020 + Math.random() * 8),
+        health: Number((99.95 + Math.random() * 0.04).toFixed(2)),
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <main className="p-8 max-w-7xl mx-auto space-y-6">
       <header className="flex justify-between items-center pb-6 border-b border-slate-800">
@@ -21,12 +43,28 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Metric Cards */}
+      {/* Dynamic Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <MetricCard icon={<Activity className="text-blue-400" />} title="Throughput" value="124,800 req/s" />
-        <MetricCard icon={<Cpu className="text-purple-400" />} title="Avg Latency" value="1.42 ms" />
-        <MetricCard icon={<Database className="text-emerald-400" />} title="Active Streams" value="1,024" />
-        <MetricCard icon={<Server className="text-amber-400" />} title="Node Health" value="99.98%" />
+        <MetricCard
+          icon={<Activity className="text-blue-400" />}
+          title="Throughput"
+          value={`${metrics.throughput.toLocaleString()} req/s`}
+        />
+        <MetricCard
+          icon={<Cpu className="text-purple-400" />}
+          title="Avg Latency"
+          value={`${metrics.latency} ms`}
+        />
+        <MetricCard
+          icon={<Database className="text-emerald-400" />}
+          title="Active Streams"
+          value={`${metrics.activeStreams.toLocaleString()}`}
+        />
+        <MetricCard
+          icon={<Server className="text-amber-400" />}
+          title="Node Health"
+          value={`${metrics.health}%`}
+        />
       </div>
 
       {/* Virtualized Telemetry Feed */}
