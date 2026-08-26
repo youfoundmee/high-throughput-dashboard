@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FixedSizeList as List } from 'react-window';
+import * as ReactWindow from 'react-window';
+
+// Resolves FixedSizeList across Turbopack CJS/ESM module wrappers
+const List = ReactWindow.FixedSizeList || (ReactWindow as any).default?.FixedSizeList;
 
 interface TelemetryPacket {
   id: number;
@@ -80,9 +83,11 @@ export default function TelemetryFeed() {
             Initializing high-throughput stream...
           </div>
         ) : (
-          <List height={360} itemCount={logs.length} itemSize={36} width="100%">
-            {Row}
-          </List>
+          List && (
+            <List height={360} itemCount={logs.length} itemSize={36} width="100%">
+              {Row}
+            </List>
+          )
         )}
       </div>
     </div>
