@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Activity, Cpu, Database, Server } from 'lucide-react';
 import TelemetryFeed from '@/components/TelemetryFeed';
+import TelemetryChart from '@/components/TelemetryChart';
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState({
@@ -66,6 +67,9 @@ export default function DashboardPage() {
           value={`${metrics.health}%`}
         />
       </div>
+
+      {/* Real-time SVG Sparkline Chart */}
+      <TelemetryChart />
 
       {/* Virtualized Telemetry Feed */}
       <TelemetryFeed />
