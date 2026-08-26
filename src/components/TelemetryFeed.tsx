@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import * as ReactWindow from 'react-window';
+import { Pause, Play, Filter } from 'lucide-react';
 
-// Resolves FixedSizeList across Turbopack CJS/ESM module wrappers
 const List = ReactWindow.FixedSizeList || (ReactWindow as any).default?.FixedSizeList;
 
 interface TelemetryPacket {
@@ -17,8 +17,12 @@ interface TelemetryPacket {
 
 export default function TelemetryFeed() {
   const [logs, setLogs] = useState<TelemetryPacket[]>([]);
+  const [isPaused, setIsPaused] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   useEffect(() => {
+    if (isPaused) return;
+
     const interval = setInterval(() => {
       const newLog: TelemetryPacket = {
         id: Date.now(),
@@ -33,10 +37,15 @@ export default function TelemetryFeed() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isPaused]);
+
+  const filteredLogs = useMemo(() => {
+    if (statusFilter === 'ALL') return logs;
+    return logs.filter((log) => log.status === statusFilter);
+  }, [logs, statusFilter]);
 
   const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const item = logs[index];
+    const item = filteredLogs[index];
     if (!item) return null;
 
     const statusColors = {
@@ -63,11 +72,44 @@ export default function TelemetryFeed() {
 
   return (
     <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-          Live Ingestion Stream ({logs.length.toLocaleString()} buffered events)
-        </h2>
-        <span className="text-xs text-slate-400 font-mono">Rate: 10 pkts/sec</span>
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
+            Live Ingestion Stream ({filteredLogs.length.toLocaleString()} events)
+          </h2>
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
+            {isPaused ? 'Stream paused' : 'Streaming at 10 pkts/sec'}
+          </p>
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL" className="bg-slate-900">All Statuses</option>
+              <option value="SUCCESS" className="bg-slate-900 text-emerald-400">SUCCESS</option>
+              <option value="WARN" className="bg-slate-900 text-amber-400">WARN</option>
+              <option value="ERROR" className="bg-slate-900 text-rose-400">ERROR</option>
+            </select>
+          </div>
+
+          <button
+            onClick={() => setIsPaused(!isPaused)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              isPaused
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30'
+                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
+            }`}
+          >
+            {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+            {isPaused ? 'Resume' : 'Pause'}
+          </button>
+        </div>
       </div>
 
       <div className="border border-slate-800 rounded-lg overflow-hidden bg-slate-950/80">
@@ -78,13 +120,13 @@ export default function TelemetryFeed() {
           <span className="w-20 text-right">Latency</span>
           <span className="w-20 text-right">Payload</span>
         </div>
-        {logs.length === 0 ? (
+        {filteredLogs.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-xs font-mono">
-            Initializing high-throughput stream...
+            No telemetry records matching criteria...
           </div>
         ) : (
           List && (
-            <List height={360} itemCount={logs.length} itemSize={36} width="100%">
+            <List height={360} itemCount={filteredLogs.length} itemSize={36} width="100%">
               {Row}
             </List>
           )
