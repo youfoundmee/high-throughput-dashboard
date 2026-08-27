@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Activity, Cpu, Database, Server } from 'lucide-react';
 import TelemetryFeed from '@/components/TelemetryFeed';
 import TelemetryChart from '@/components/TelemetryChart';
+import AnomalyPanel from '@/components/AnomalyPanel';
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState({
@@ -13,7 +14,6 @@ export default function DashboardPage() {
     health: 99.98,
   });
 
-  // Jitter simulation to match streaming updates
   useEffect(() => {
     const interval = setInterval(() => {
       setMetrics({
@@ -70,6 +70,9 @@ export default function DashboardPage() {
 
       {/* Real-time SVG Sparkline Chart */}
       <TelemetryChart />
+
+      {/* Real-time Anomaly Detection & System Alert Panel */}
+      <AnomalyPanel />
 
       {/* Virtualized Telemetry Feed */}
       <TelemetryFeed />
