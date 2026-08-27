@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# High-Throughput Telemetry & Edge Observability Dashboard
 
-## Getting Started
+A high-performance real-time telemetry ingestion and stream observability platform built with **Next.js**, **TypeScript**, and **Tailwind CSS**. Designed to handle high-frequency time-series data streams without compromising UI framerates or browser DOM performance.
 
-First, run the development server:
+![Telemetry Dashboard Preview](https://raw.githubusercontent.com/placeholder/preview.png)
+
+---
+
+## Key Architectural Features
+
+* **DOM Virtualization (`react-window`)**: Renders thousands of real-time incoming events while maintaining a static memory footprint and $O(1)$ active DOM nodes.
+* **Native SVG Time-Series Sparklines**: Sub-millisecond rendering of real-time latency trend dynamics without external charting library overhead.
+* **Edge Anomaly Detection Engine**: Automated stream monitoring that flags latency spikes (>2.0 ms) and ingestion packet loss in real-time.
+* **Granular Node Diagnostics**: Interactive diagnostic modal revealing raw JSON spatial headers (`lidar_points_ingested`, sector IDs) per edge device.
+* **Client-Side Buffer Exporter**: Instant client-side CSV export of the buffered event stream for offline telemetry analysis.
+
+---
+
+## Tech Stack
+
+| Category | Technology |
+| :--- | :--- |
+| **Framework** | Next.js (App Router, Turbopack) |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS |
+| **Virtualization** | `react-window` |
+| **Icons** | Lucide React |
+
+---
+
+## Performance Optimizations
+
+1. **State Virtualization**: Buffered event logs are capped to a sliding window of 5,000 items in memory to prevent browser heap inflation.
+2. **CJS/ESM Turbopack Compatibility**: Dynamic module resolution for `react-window` to supportNext.js Turbopack compilation seamlessly.
+3. **Zero-Dependency SVG Graphics**: Lightweight vector paths for real-time data visualizers to guarantee 60 FPS UI performance.
+
+---
+
+## Local Setup
+
+### Prerequisites
+* Node.js 18+ 
+* npm or pnpm
+
+### Installation
 
 ```bash
+# Clone repository
+git clone [https://github.com/your-username/high-throughput-dashboard.git](https://github.com/your-username/high-throughput-dashboard.git)
+cd high-throughput-dashboard
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
