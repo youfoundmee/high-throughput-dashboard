@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import * as ReactWindow from 'react-window';
-import { Pause, Play, Filter } from 'lucide-react';
+import { Pause, Play, Filter, Download, Terminal, X, Server } from 'lucide-react';
 
 const List = ReactWindow.FixedSizeList || (ReactWindow as any).default?.FixedSizeList;
 
@@ -19,6 +19,7 @@ export default function TelemetryFeed() {
   const [logs, setLogs] = useState<TelemetryPacket[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [selectedNode, setSelectedNode] = useState<TelemetryPacket | null>(null);
 
   useEffect(() => {
     if (isPaused) return;
@@ -44,6 +45,21 @@ export default function TelemetryFeed() {
     return logs.filter((log) => log.status === statusFilter);
   }, [logs, statusFilter]);
 
+  // Export buffer as CSV
+  const exportCSV = () => {
+    const headers = ['Timestamp,Node ID,Status,Latency (ms),Payload Size\n'];
+    const rows = filteredLogs.map(
+      (l) => `${l.timestamp},${l.nodeId},${l.status},${l.latency},${l.payloadSize}`
+    );
+    const blob = new Blob([...headers, rows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `telemetry-dump-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
     const item = filteredLogs[index];
     if (!item) return null;
@@ -57,7 +73,8 @@ export default function TelemetryFeed() {
     return (
       <div
         style={style}
-        className="flex items-center justify-between px-4 text-xs border-b border-slate-800/60 hover:bg-slate-800/40 font-mono transition-colors"
+        onClick={() => setSelectedNode(item)}
+        className="flex items-center justify-between px-4 text-xs border-b border-slate-800/60 hover:bg-slate-800/60 cursor-pointer font-mono transition-colors"
       >
         <span className="text-slate-400 w-24">{item.timestamp}</span>
         <span className="text-slate-300 font-semibold w-32">{item.nodeId}</span>
@@ -71,19 +88,27 @@ export default function TelemetryFeed() {
   };
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-4">
+    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-4 relative">
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
           <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
             Live Ingestion Stream ({filteredLogs.length.toLocaleString()} events)
           </h2>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
-            {isPaused ? 'Stream paused' : 'Streaming at 10 pkts/sec'}
+            {isPaused ? 'Stream paused' : 'Click any row to inspect edge node diagnostics'}
           </p>
         </div>
 
-        {/* Controls */}
+        {/* Action Controls */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-400" />
+            Export CSV
+          </button>
+
           <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
@@ -132,6 +157,66 @@ export default function TelemetryFeed() {
           )
         )}
       </div>
+
+      {/* Node Diagnostic Modal */}
+      {selectedNode && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <Server className="w-5 h-5 text-purple-400" />
+                <h3 className="text-base font-bold text-white font-mono">
+                  {selectedNode.nodeId} Diagnostic Dump
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedNode(null)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                <span className="text-slate-500 block text-[10px]">EVENT ID</span>
+                <span className="text-slate-200 font-bold">{selectedNode.id}</span>
+              </div>
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                <span className="text-slate-500 block text-[10px]">TIMESTAMP</span>
+                <span className="text-slate-200 font-bold">{selectedNode.timestamp}</span>
+              </div>
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                <span className="text-slate-500 block text-[10px]">INGESTION LATENCY</span>
+                <span className="text-purple-400 font-bold">{selectedNode.latency} ms</span>
+              </div>
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                <span className="text-slate-500 block text-[10px]">PAYLOAD SIZE</span>
+                <span className="text-slate-200 font-bold">{selectedNode.payloadSize}</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-800 text-xs font-mono space-y-1">
+              <div className="flex items-center gap-2 text-slate-400 border-b border-slate-800 pb-1.5 mb-2">
+                <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Simulated Spatial Payload Header</span>
+              </div>
+              <p className="text-slate-300">{`{`}</p>
+              <p className="text-slate-400 pl-4">{`"sector_id": "construction_zone_floor_4",`}</p>
+              <p className="text-slate-400 pl-4">{`"lidar_points_ingested": 48209,`}</p>
+              <p className="text-slate-400 pl-4">{`"edge_status": "${selectedNode.status}"`}</p>
+              <p className="text-slate-300">{`}`}</p>
+            </div>
+
+            <button
+              onClick={() => setSelectedNode(null)}
+              className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition-colors"
+            >
+              Close Diagnostic Panel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
